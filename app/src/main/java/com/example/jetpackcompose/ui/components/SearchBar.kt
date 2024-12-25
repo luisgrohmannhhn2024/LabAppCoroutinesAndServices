@@ -23,6 +23,14 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.jetpackcompose.viewmodel.WeatherViewModel
 
+/**
+ * A sample search bar with recent search suggestions and query handling.
+ *
+ * @param weatherViewModel The ViewModel managing weather-related data and actions.
+ * @param selectedMenu The currently selected menu (e.g., "Home", "Forecast").
+ * @param apiKey The API key used for weather API requests.
+ * @param onQueryChanged Callback triggered when the search query is updated.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBarSample(
@@ -31,15 +39,17 @@ fun SearchBarSample(
     apiKey: String,
     onQueryChanged: (String) -> Unit
 ) {
+    // State for managing the search bar's input
     val textFieldState = rememberTextFieldState()
     var expanded by rememberSaveable { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     var cityName by rememberSaveable { mutableStateOf("") }
-
     var recentSearches by rememberSaveable { mutableStateOf(listOf<String>()) }
 
+    // Observing current weather data
     val currentWeather by weatherViewModel.currentWeather.collectAsState()
 
+    // Layout of the search bar
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,6 +61,7 @@ fun SearchBarSample(
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
         ) {
+            // The search bar input field
             SearchBar(
                 modifier = Modifier.fillMaxWidth(),
                 inputField = {
@@ -61,10 +72,12 @@ fun SearchBarSample(
                             onQueryChanged(cityName)
 
                             if (inputQuery.isNotEmpty()) {
+                                // Handling API calls based on the selected menu
                                 when (selectedMenu) {
                                     "Home" -> weatherViewModel.fetchWeatherData(inputQuery, apiKey)
                                     "Forecast" -> weatherViewModel.fetchForecastData(inputQuery, apiKey)
                                 }
+                                // Update recent searches
                                 recentSearches = (listOf(inputQuery) + recentSearches).distinct().take(5)
                             }
 
@@ -77,8 +90,8 @@ fun SearchBarSample(
                             expanded = it && recentSearches.isNotEmpty()
                         },
                         placeholder = { Text("Search any city") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) }
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
+                        trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = "Options Icon") }
                     )
                 },
                 expanded = expanded,
@@ -86,6 +99,7 @@ fun SearchBarSample(
                     expanded = it && recentSearches.isNotEmpty()
                 },
             ) {
+                // Recent search suggestions
                 if (recentSearches.isNotEmpty() && expanded) {
                     LazyColumn(
                         modifier = Modifier
@@ -97,10 +111,11 @@ fun SearchBarSample(
                             val resultText = recentSearches[idx]
                             ListItem(
                                 headlineContent = { Text(resultText) },
-                                leadingContent = { Icon(Icons.Filled.Star, contentDescription = null) },
+                                leadingContent = { Icon(Icons.Filled.Star, contentDescription = "Recent Search Icon") },
                                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                                 modifier = Modifier
                                     .clickable {
+                                        // Handle recent search selection
                                         textFieldState.setTextAndPlaceCursorAtEnd(resultText)
                                         expanded = false
                                         weatherViewModel.fetchWeatherData(resultText, apiKey)

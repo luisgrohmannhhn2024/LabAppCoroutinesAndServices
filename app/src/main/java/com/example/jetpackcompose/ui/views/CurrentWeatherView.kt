@@ -23,19 +23,33 @@ import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.jetpackcompose.ui.components.SearchBarSample
 
+/**
+ * Composable function to display the current weather information for a specified location.
+ * Includes a search bar for entering city names and shows detailed weather metrics.
+ *
+ * @param currentWeather The current weather data to display.
+ * @param iconUrl The URL for the weather icon.
+ */
 @Composable
 fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
 
+    // ViewModel instance for managing weather-related data
     val weatherViewModel: WeatherViewModel = viewModel()
     val currentWeather by weatherViewModel.currentWeather.collectAsState()
     val iconUrl by weatherViewModel.iconUrl.collectAsState()
 
+    // Mutable state variables to store hometown and API key
     var hometown by remember { mutableStateOf("") }
     var apiKey by remember { mutableStateOf("") }
     val errorMessage by weatherViewModel.errorMessage.collectAsState()
 
+    // Context for accessing DataStore
     val context = LocalContext.current
 
+    /**
+     * LaunchedEffect block to load hometown and API key from DataStore
+     * and fetch current weather data based on the saved hometown.
+     */
     LaunchedEffect(Unit) {
         context.dataStore.data.collect { preferences ->
             hometown = preferences[Keys.HOMETOWN_KEY] ?: ""
@@ -46,13 +60,16 @@ fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
         }
     }
 
+    // Mutable state to manage the search query
     val searchQuery = rememberSaveable { mutableStateOf("") }
 
+    // UI layout for the search bar and weather details
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
+        // Search bar for entering city names
         SearchBarSample(
             selectedMenu = "Home",
             apiKey = apiKey,
@@ -65,6 +82,7 @@ fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
         )
     }
 
+    // Display error message if any
     errorMessage?.let {
         Text(
             text = it,
@@ -77,6 +95,7 @@ fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
         )
     }
 
+    // Show weather details if search query or hometown is available
     if (searchQuery.value.isNotEmpty() || hometown.isNotEmpty()) {
         currentWeather?.let {
             Column(
@@ -111,6 +130,12 @@ fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
                     }
                 }
 
+                /**
+                 * Helper function to create a row displaying weather information.
+                 *
+                 * @param label The label for the weather metric.
+                 * @param value The value of the weather metric.
+                 */
                 @Composable
                 fun createWeatherInfoRow(label: String, value: String) {
                     Row(
@@ -149,6 +174,7 @@ fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
                     }
                 }
 
+                // Display various weather metrics
                 createWeatherInfoRow("Description:", it.weather[0].description)
                 Spacer(modifier = Modifier.height(8.dp))
                 createWeatherInfoRow("Temp.:", "${it.main.temp}°C")
@@ -185,6 +211,12 @@ fun CurrentWeatherView(currentWeather: WeatherData?, iconUrl: String?) {
     }
 }
 
+/**
+ * Converts a Unix timestamp to a formatted time string.
+ *
+ * @param timestamp The Unix timestamp to convert.
+ * @return A formatted string representing the time.
+ */
 fun convertUnixToTime(timestamp: Long): String {
     val date = Date(timestamp * 1000)
     val format = SimpleDateFormat("HH:mm", Locale.getDefault())
